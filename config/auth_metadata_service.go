@@ -17,6 +17,7 @@ import (
 const metadataServiceTimeout = 10 * time.Second
 
 const MetadataServiceVersion = "1"
+const MetadataServiceVersionHeader = "X-Databricks-Metadata-Version"
 
 // response expected from the metadata service
 // other fields such as `cluster_id` might be added later
@@ -44,8 +45,8 @@ type serverResponse struct {
 // host: URL of the Databricks host to connect to.
 // token: object with the following fields
 //   access_token: The requested access token.
-//	 token_type: The type of token, which is a "Bearer" access token.
-//	 expires_on: The timespan when the access token expires.
+//   token_type: The type of token, which is a "Bearer" access token.
+//   expires_on: The timespan when the access token expires.
 
 type MetadataServiceCredentials struct{}
 
@@ -72,8 +73,7 @@ func (c MetadataServiceCredentials) Configure(ctx context.Context, cfg *Config) 
 
 	response, err := ms.Get()
 	if err != nil {
-		logger.Debugf(ctx, "failed to get token from metadata service: %s", err)
-		return nil, nil
+		return nil, err
 	}
 
 	if response == nil {
@@ -110,7 +110,7 @@ func (s metadataService) Get() (*serverResponse, error) {
 		return nil, fmt.Errorf("token request: %w", err)
 	}
 
-	req.Header.Add("X-Databricks-Metadata-Version", MetadataServiceVersion)
+	req.Header.Add(MetadataServiceVersionHeader, MetadataServiceVersion)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
